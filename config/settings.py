@@ -1,8 +1,8 @@
 import os
+from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
-
 
 load_dotenv()
 
@@ -13,10 +13,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 
-
 DEBUG = True
 
 ALLOWED_HOSTS = []
+
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -27,7 +27,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework_simplejwt",
-
+    "django_filters",
+    "drf_yasg",
     "users",
     "habits",
 ]
@@ -61,6 +62,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
+REST_FRAMEWORK = {
+    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+}
+
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
@@ -71,6 +83,7 @@ DATABASES = {
         "PORT": os.getenv("PORT"),
     }
 }
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -87,6 +100,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+
 LANGUAGE_CODE = "en-us"
 
 TIME_ZONE = "UTC"
@@ -95,7 +109,9 @@ USE_I18N = True
 
 USE_TZ = True
 
+
 STATIC_URL = "static/"
+
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -104,3 +120,35 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 AUTH_USER_MODEL = "users.User"
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=10),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+}
+
+CORS_ALLOWED_ORIGINS = [
+    "https://read-only.example.com",
+    "https://read-and-write.example.com",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://read-and-write.example.com",
+]
+
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60
+
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
+
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+CELERY_BEAT_SCHEDULE = {
+    "send_info_about_habit": {
+        "task": "habits.tasks.send_info_about_habit",
+        "schedule": timedelta(minutes=1),
+    },
+}
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
