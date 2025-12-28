@@ -62,11 +62,18 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Log in to Docker Hub
         run: |
           echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | \
           docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
+        shell: bash
+
+      - name: Verify Docker login
+        run: docker info --format '{{.RegistryConfig.IndexConfigs}}'
+
 
       - name: Build Docker image
         run: docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }} .
