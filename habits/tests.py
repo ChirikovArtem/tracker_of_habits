@@ -5,9 +5,11 @@ from rest_framework.test import APITestCase
 
 from habits.models import Habit
 from habits.serializers import HabitSerializer
-from habits.validators import (associated_habit_is_nice_habit_validator,
-                               associated_habit_or_reward_validator,
-                               is_nice_habit_validator)
+from habits.validators import (
+    associated_habit_is_nice_habit_validator,
+    associated_habit_or_reward_validator,
+    is_nice_habit_validator,
+)
 from users.models import User
 
 
