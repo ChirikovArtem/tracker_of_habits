@@ -69,22 +69,22 @@ jobs:
         run: |
           echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | \
           docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
-        shell: bash
 
       - name: Verify Docker login
-        run: docker info --format '{{.RegistryConfig.IndexConfigs}}'
-
+        run: |
+          docker info
 
       - name: Build Docker image
-        run: docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }} .
+        run: |
+          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }} .
 
-      - name: Push Docker image to Docker Hub
-        run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }}
+      - name: Push Docker image
+        run: |
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }}
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
-
 
     steps:
       - name: Set up SSH
@@ -99,29 +99,25 @@ jobs:
 
       - name: Check Docker installation
         run: |
-          ssh -o StrictHostKeyChecking=no \
-          ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} 'docker --version || echo "Docker not installed"'
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} 'docker --version || echo "Docker not installed"'
 
       - name: Install Docker if not present
         run: |
-          ssh -o StrictHostKeyChecking=no \
-          ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} '
-          if ! which docker > /dev/null; then
-            echo "Installing Docker..."
-            sudo apt update
-            sudo apt install -y docker.io
-            sudo systemctl start docker
-            sudo systemctl enable docker
-          fi
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} '
+            if ! which docker > /dev/null; then
+              echo "Installing Docker..."
+              sudo apt update
+              sudo apt install -y docker.io
+              sudo systemctl start docker
+              sudo systemctl enable docker
+            fi
           '
 
       - name: Deploy to server
         run: |
-          ssh -o StrictHostKeyChecking=no \
-          ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-          docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }}
-          docker stop myapp || true
-          docker rm myapp || true
-          docker run -d --name myapp -p 80:8000 \
-          ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }}
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << EOF
+            docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }}
+            docker stop myapp || true
+            docker rm myapp || true
+            docker run -d --name myapp -p 80:8000 ${{ secrets.DOCKER_HUB_USERNAME }}/myapp:${{ github.sha }}
           EOF
